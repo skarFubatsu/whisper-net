@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package com.whispernetwork.schema.v1;
+
+option java_multiple_files = true;
+option java_package = "com.whispernetwork.schema.v1.entity";
+
+// A value object holding the core psychological traits of an agent.
+message Persona {
+  double bias = 1;
+  double stubbornness = 2;
+  double susceptibility = 3;
+  double suspiciousness = 4;
+}
+
+// A global entity representing an individual.
+message Agent {
+  string id = 1;
+  string nickname = 2;
+  Persona persona = 3;
+}
+
+enum RelationshipType {
+  // Proto enum zero value; services normalize this to RELATIONSHIP_TYPE_NEUTRAL.
+  RELATIONSHIP_TYPE_UNSPECIFIED = 0;
+  RELATIONSHIP_TYPE_NEUTRAL = 1;
+  RELATIONSHIP_TYPE_FAMILY = 2;
+  RELATIONSHIP_TYPE_FRIEND = 3;
+  RELATIONSHIP_TYPE_PEER = 4;
+  RELATIONSHIP_TYPE_ANTAGONIST = 5;
+}
+
+enum RelationshipTransmissionMode {
+  // Proto enum zero value; services normalize this to RELATIONSHIP_TRANSMISSION_MODE_NORMAL_FLOW.
+  RELATIONSHIP_TRANSMISSION_MODE_UNSPECIFIED = 0;
+  RELATIONSHIP_TRANSMISSION_MODE_NORMAL_FLOW = 1;
+  RELATIONSHIP_TRANSMISSION_MODE_RELAY_CHANNEL = 2;
+}
+
+// Represents a directed edge connecting A -> B.
+message Relationship {
+  string id = 1;
+  string source_agent_id = 2;
+  string target_agent_id = 3;
+  double weight = 4;
+  double trust_value = 5;
+  RelationshipType relationship_type = 6;
+  string reverse_relationship_id = 7;
+  RelationshipTransmissionMode transmission_mode = 8;
+}
+
+// Role of an agent in a network instance.
+enum AgentRole {
+  // Proto enum zero value; services normalize this to AGENT_ROLE_NORMAL.
+  AGENT_ROLE_UNSPECIFIED = 0;
+  AGENT_ROLE_NORMAL = 1;
+  AGENT_ROLE_TRIGGER = 2;
+  AGENT_ROLE_RELAY = 3;
+}
+
+// An instance of an Agent in a specific Influence Network.
+message NetworkAgentInstance {
+  string agent_id = 1;
+  double opinion_value = 2;
+  AgentRole role = 3;
+}
+
+message InfluenceNetwork {
+  string id = 1;
+  int32 version_number = 2;
+
+  map<string, Agent> global_agents = 3;
+
+  repeated NetworkAgentInstance network_agents = 4;
+
+  repeated Relationship relationships = 5;
+}

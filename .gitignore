@@ -1,0 +1,23 @@
+.venv
+
+# Maven build output & generated code
+target/
+proto-schema/python/whisper_net_schema/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node/React
+node_modules/
+dist/
+build/
+
+# Environment
+*.env
+*.env.local
