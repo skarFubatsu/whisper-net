@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package com.whispernetwork.schema.v1;
+
+option java_multiple_files = true;
+option java_package = "com.whispernetwork.schema.v1.events";
+
+message SimulationStartedEvent {
+  string simulation_run_id = 1;
+  string network_id = 2;
+  int32 network_version_number = 3;
+  string initiated_by_actor_id = 4;
+  string client_request_id = 5;
+  int64 started_at_epoch_millis = 6;
+}
+
+message SimulationCancelledEvent {
+  string simulation_run_id = 1;
+  string network_id = 2;
+  string cancelled_by_actor_id = 3;
+  string client_request_id = 4;
+  int64 cancelled_at_epoch_millis = 5;
+}
+
+message OpinionUpdatedEvent {
+  string simulation_run_id = 1;
+  string network_id = 2;
+  int32 tick_number = 3;
+  string agent_id = 4;
+  double previous_opinion_value = 5;
+  double new_opinion_value = 6;
+  double incoming_influence_magnitude = 7;
+  repeated string contributing_source_agent_ids = 8;
+
+  // Relay behavior metadata for UI/analytics; when true, this update bypassed trust and weight.
+  bool relayed_as_is = 9;
+  string relay_origin_agent_id = 10;
+  bool ignored_trust_and_weight = 11;
+}
