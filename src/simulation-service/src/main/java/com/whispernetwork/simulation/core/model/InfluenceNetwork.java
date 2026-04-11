@@ -14,6 +14,7 @@ public final class InfluenceNetwork {
   private final String id;
   private final int versionNumber;
   private final Map<String, AgentState> agents;
+  private final Map<String, Relationship> relationshipsById;
   private final Map<String, List<Relationship>> inboundRelationships;
 
   /**
@@ -29,6 +30,7 @@ public final class InfluenceNetwork {
     this.id = id;
     this.versionNumber = versionNumber;
     this.agents = new HashMap<>();
+    this.relationshipsById = new HashMap<>();
     this.inboundRelationships = new HashMap<>();
   }
 
@@ -62,9 +64,13 @@ public final class InfluenceNetwork {
    * @param relationship relationship edge
    */
   public void addRelationship(Relationship relationship) {
+    if (relationshipsById.containsKey(relationship.id())) {
+      throw new IllegalArgumentException("Relationship id already exists: " + relationship.id());
+    }
     if (!agents.containsKey(relationship.sourceAgentId()) || !agents.containsKey(relationship.targetAgentId())) {
       throw new IllegalArgumentException("Both source and target agents must exist before adding a relationship");
     }
+    relationshipsById.put(relationship.id(), relationship);
     inboundRelationships.computeIfAbsent(relationship.targetAgentId(), ignored -> new ArrayList<>()).add(relationship);
   }
 
@@ -73,6 +79,23 @@ public final class InfluenceNetwork {
    */
   public Collection<AgentState> getAgents() {
     return Collections.unmodifiableCollection(agents.values());
+  }
+
+  /**
+   * Returns all relationships in the network.
+   */
+  public Collection<Relationship> getRelationships() {
+    return Collections.unmodifiableCollection(relationshipsById.values());
+  }
+
+  /**
+   * Returns a relationship by id.
+   *
+   * @param relationshipId relationship id
+   * @return relationship or null when not found
+   */
+  public Relationship getRelationship(String relationshipId) {
+    return relationshipsById.get(relationshipId);
   }
 
   /**

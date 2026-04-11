@@ -27,24 +27,23 @@ class SimulationTickEngineTest {
   void shouldProcessQueueDeterministicallyWhenMagnitudeTies() {
     InfluenceNetwork network = new InfluenceNetwork("network-1", 1);
 
-        AgentState trigger = new AgentState(AGENT_A_ID, null, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.TRIGGER, 0.9);
-        AgentState b = new AgentState(AGENT_B_ID, "", new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.NORMAL, 0.0);
-        AgentState c = new AgentState(AGENT_C_ID, "Agent C", new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.NORMAL, 0.0);
-
-        assertEquals(AGENT_B_ID, b.getNickname());
-        assertEquals("Agent C", c.getNickname());
+    AgentState trigger = new AgentState(AGENT_A_ID, null, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.TRIGGER, 0.9);
+    AgentState b = new AgentState(AGENT_B_ID, "", new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.NORMAL, 0.0);
+    AgentState c = new AgentState(AGENT_C_ID, "Agent C", new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.NORMAL, 0.0);
+    assertEquals(AGENT_B_ID, b.getNickname());
+    assertEquals("Agent C", c.getNickname());
 
     network.addAgent(trigger);
     network.addAgent(b);
     network.addAgent(c);
 
-        network.addRelationship(new Relationship("R1", "R2", AGENT_A_ID, AGENT_B_ID, 1.0, 1.0, RelationshipType.FRIEND,
+    network.addRelationship(new Relationship("R1", "R2", AGENT_A_ID, AGENT_B_ID, 1.0, 1.0, RelationshipType.FRIEND,
         RelationshipTransmissionMode.NORMAL_FLOW));
-        network.addRelationship(new Relationship("R2", "R1", AGENT_B_ID, AGENT_A_ID, 1.0, 1.0, RelationshipType.FRIEND,
+    network.addRelationship(new Relationship("R2", "R1", AGENT_B_ID, AGENT_A_ID, 1.0, 1.0, RelationshipType.FRIEND,
         RelationshipTransmissionMode.NORMAL_FLOW));
-        network.addRelationship(new Relationship("R3", "R4", AGENT_A_ID, AGENT_C_ID, 1.0, 1.0, RelationshipType.FRIEND,
+    network.addRelationship(new Relationship("R3", "R4", AGENT_A_ID, AGENT_C_ID, 1.0, 1.0, RelationshipType.FRIEND,
         RelationshipTransmissionMode.NORMAL_FLOW));
-        network.addRelationship(new Relationship("R4", "R3", AGENT_C_ID, AGENT_A_ID, 1.0, 1.0, RelationshipType.FRIEND,
+    network.addRelationship(new Relationship("R4", "R3", AGENT_C_ID, AGENT_A_ID, 1.0, 1.0, RelationshipType.FRIEND,
         RelationshipTransmissionMode.NORMAL_FLOW));
 
     SimulationTickEngine engine = new SimulationTickEngine(new OpinionAggregator());
@@ -58,10 +57,10 @@ class SimulationTickEngineTest {
   void shouldRelayTriggerOpinionAsIsOverRelayChannelAndIgnoreTrustWeight() {
     InfluenceNetwork network = new InfluenceNetwork("network-2", 1);
 
-        AgentState trigger = new AgentState(TRIGGER_ID, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.TRIGGER, 0.8);
-        AgentState relay = new AgentState(RELAY_ID, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.RELAY, 0.8);
-        relay.setRelayOriginAgentId(TRIGGER_ID);
-        AgentState target = new AgentState(TARGET_ID, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.NORMAL, -0.1);
+    AgentState trigger = new AgentState(TRIGGER_ID, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.TRIGGER, 0.8);
+    AgentState relay = new AgentState(RELAY_ID, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.RELAY, 0.8);
+    relay.setRelayOriginAgentId(TRIGGER_ID);
+    AgentState target = new AgentState(TARGET_ID, new Persona(0.0, 0.0, 1.0, 0.0), AgentRole.NORMAL, -0.1);
 
     network.addAgent(trigger);
     network.addAgent(relay);
