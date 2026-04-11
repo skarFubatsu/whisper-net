@@ -40,6 +40,11 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
+        <configuration>
+          <systemPropertyVariables>
+            <runPerformanceTests>${runPerformanceTests}</runPerformanceTests>
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -55,4 +60,13 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>perf</id>
+      <properties>
+        <runPerformanceTests>true</runPerformanceTests>
+      </properties>
+    </profile>
+  </profiles>
 </project>
