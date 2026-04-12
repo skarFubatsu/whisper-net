@@ -1,9 +1,9 @@
-package com.whispernetwork.simulation.application.model;
+package com.whispernetwork.shared.dto;
 
 /**
- * Lifecycle statuses for simulation runs.
+ * Shared lifecycle statuses for simulation run projections across services.
  */
-public enum SimulationRunStatus {
+public enum RunStatus {
   REQUESTED,
   RUNNING,
   CANCELLING,
