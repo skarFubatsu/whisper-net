@@ -1,5 +1,7 @@
 package com.whispernetwork.simulation.application.model;
 
+import com.whispernetwork.shared.util.TextRequire;
+
 /**
  * Command to cancel an active simulation run.
  */
@@ -13,15 +15,9 @@ public record SimulationCancelCommand(
    * Validates command fields.
    */
   public SimulationCancelCommand {
-    requireText(simulationRunId, "simulationRunId");
-    requireText(networkId, "networkId");
-    requireText(requestedByActorId, "requestedByActorId");
-    requireText(clientRequestId, "clientRequestId");
-  }
-
-  private static void requireText(String value, String fieldName) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(fieldName + " is required");
-    }
+    TextRequire.nonBlank(simulationRunId, "simulationRunId");
+    TextRequire.nonBlank(networkId, "networkId");
+    TextRequire.nonBlank(requestedByActorId, "requestedByActorId");
+    TextRequire.nonBlank(clientRequestId, "clientRequestId");
   }
 }

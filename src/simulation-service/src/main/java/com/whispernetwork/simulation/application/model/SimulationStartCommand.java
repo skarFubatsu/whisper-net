@@ -1,5 +1,7 @@
 package com.whispernetwork.simulation.application.model;
 
+import com.whispernetwork.shared.util.TextRequire;
+
 /**
  * Command to request a simulation run.
  */
@@ -14,20 +16,14 @@ public record SimulationStartCommand(
    * Validates command fields.
    */
   public SimulationStartCommand {
-    requireText(networkId, "networkId");
-    requireText(requestedByActorId, "requestedByActorId");
-    requireText(clientRequestId, "clientRequestId");
+    TextRequire.nonBlank(networkId, "networkId");
+    TextRequire.nonBlank(requestedByActorId, "requestedByActorId");
+    TextRequire.nonBlank(clientRequestId, "clientRequestId");
     if (networkVersionNumber < 1) {
       throw new IllegalArgumentException("networkVersionNumber must be >= 1");
     }
     if (requestedTicks < 1) {
       throw new IllegalArgumentException("requestedTicks must be >= 1");
-    }
-  }
-
-  private static void requireText(String value, String fieldName) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(fieldName + " is required");
     }
   }
 }

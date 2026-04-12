@@ -1,5 +1,7 @@
 package com.whispernetwork.simulation.application.model;
 
+import com.whispernetwork.shared.util.TextRequire;
+import com.whispernetwork.shared.dto.RunStatus;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -13,7 +15,7 @@ public final class SimulationRun {
   private final String requestedByActorId;
   private final String clientRequestId;
   private final int requestedTicks;
-  private volatile SimulationRunStatus status;
+  private volatile RunStatus status;
   private volatile int completedTicks;
   private volatile String failureMessage;
   private volatile String cancellationRequestedByActorId;
@@ -31,23 +33,91 @@ public final class SimulationRun {
       String requestedByActorId,
       String clientRequestId,
       int requestedTicks) {
+    this(
+      id,
+      networkId,
+      networkVersionNumber,
+      requestedByActorId,
+      clientRequestId,
+      requestedTicks,
+      RunStatus.REQUESTED,
+      0,
+      null,
+      null,
+      null,
+      Instant.now(),
+      Instant.now());
+    }
+
+    private SimulationRun(
+      String id,
+      String networkId,
+      int networkVersionNumber,
+      String requestedByActorId,
+      String clientRequestId,
+      int requestedTicks,
+      RunStatus status,
+      int completedTicks,
+      String failureMessage,
+      String cancellationRequestedByActorId,
+      String cancellationClientRequestId,
+      Instant createdAt,
+      Instant updatedAt) {
     UUID.fromString(id);
-    requireText(networkId, "networkId");
-    requireText(requestedByActorId, "requestedByActorId");
-    requireText(clientRequestId, "clientRequestId");
+    TextRequire.nonBlank(networkId, "networkId");
+    TextRequire.nonBlank(requestedByActorId, "requestedByActorId");
+    TextRequire.nonBlank(clientRequestId, "clientRequestId");
     this.id = id;
     this.networkId = networkId;
     this.networkVersionNumber = networkVersionNumber;
     this.requestedByActorId = requestedByActorId;
     this.clientRequestId = clientRequestId;
     this.requestedTicks = requestedTicks;
-    this.status = SimulationRunStatus.REQUESTED;
-    this.completedTicks = 0;
-    this.failureMessage = null;
-    this.cancellationRequestedByActorId = null;
-    this.cancellationClientRequestId = null;
-    this.createdAt = Instant.now();
-    this.updatedAt = this.createdAt;
+    this.status = status;
+    this.completedTicks = completedTicks;
+    this.failureMessage = failureMessage;
+    this.cancellationRequestedByActorId = cancellationRequestedByActorId;
+    this.cancellationClientRequestId = cancellationClientRequestId;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
+
+  /**
+   * Rehydrates a run aggregate from persisted storage.
+   */
+  public static SimulationRun rehydrate(
+      String id,
+      String networkId,
+      int networkVersionNumber,
+      String requestedByActorId,
+      String clientRequestId,
+      int requestedTicks,
+      RunStatus status,
+      int completedTicks,
+      String failureMessage,
+      String cancellationRequestedByActorId,
+      String cancellationClientRequestId,
+      Instant createdAt,
+      Instant updatedAt) {
+    UUID.fromString(id);
+    TextRequire.nonBlank(networkId, "networkId");
+    TextRequire.nonBlank(requestedByActorId, "requestedByActorId");
+    TextRequire.nonBlank(clientRequestId, "clientRequestId");
+
+    return new SimulationRun(
+        id,
+        networkId,
+        networkVersionNumber,
+        requestedByActorId,
+        clientRequestId,
+      requestedTicks,
+      status,
+      completedTicks,
+      failureMessage,
+      cancellationRequestedByActorId,
+      cancellationClientRequestId,
+      createdAt,
+      updatedAt);
   }
 
   /**
@@ -95,7 +165,7 @@ public final class SimulationRun {
   /**
    * Returns current status.
    */
-  public SimulationRunStatus getStatus() {
+  public RunStatus getStatus() {
     return status;
   }
 
@@ -145,10 +215,10 @@ public final class SimulationRun {
    * Transitions REQUESTED to RUNNING.
    */
   public synchronized void markRunning() {
-    if (status != SimulationRunStatus.REQUESTED) {
+    if (status != RunStatus.REQUESTED) {
       throw new IllegalStateException("Run can only move to RUNNING from REQUESTED");
     }
-    status = SimulationRunStatus.RUNNING;
+    status = RunStatus.RUNNING;
     updatedAt = Instant.now();
   }
 
@@ -156,16 +226,16 @@ public final class SimulationRun {
    * Transitions REQUESTED/RUNNING to CANCELLING.
    */
   public synchronized void markCancelling(String requestedByActorId, String clientRequestId) {
-    requireText(requestedByActorId, "requestedByActorId");
-    requireText(clientRequestId, "clientRequestId");
-    if (status == SimulationRunStatus.REQUESTED || status == SimulationRunStatus.RUNNING) {
-      status = SimulationRunStatus.CANCELLING;
+    TextRequire.nonBlank(requestedByActorId, "requestedByActorId");
+    TextRequire.nonBlank(clientRequestId, "clientRequestId");
+    if (status == RunStatus.REQUESTED || status == RunStatus.RUNNING) {
+      status = RunStatus.CANCELLING;
       this.cancellationRequestedByActorId = requestedByActorId;
       this.cancellationClientRequestId = clientRequestId;
       updatedAt = Instant.now();
       return;
     }
-    if (status.isTerminal() || status == SimulationRunStatus.CANCELLING) {
+    if (status.isTerminal() || status == RunStatus.CANCELLING) {
       return;
     }
     throw new IllegalStateException("Run cannot be marked CANCELLING from " + status);
@@ -183,10 +253,10 @@ public final class SimulationRun {
    * Marks run completed.
    */
   public synchronized void markCompleted() {
-    if (status != SimulationRunStatus.RUNNING) {
+    if (status != RunStatus.RUNNING) {
       throw new IllegalStateException("Run can only complete from RUNNING");
     }
-    status = SimulationRunStatus.COMPLETED;
+    status = RunStatus.COMPLETED;
     updatedAt = Instant.now();
   }
 
@@ -194,10 +264,10 @@ public final class SimulationRun {
    * Marks run cancelled.
    */
   public synchronized void markCancelled() {
-    if (status != SimulationRunStatus.CANCELLING) {
+    if (status != RunStatus.CANCELLING) {
       throw new IllegalStateException("Run can only cancel from CANCELLING");
     }
-    status = SimulationRunStatus.CANCELLED;
+    status = RunStatus.CANCELLED;
     updatedAt = Instant.now();
   }
 
@@ -205,14 +275,9 @@ public final class SimulationRun {
    * Marks run failed.
    */
   public synchronized void markFailed(String message) {
-    status = SimulationRunStatus.FAILED;
+    status = RunStatus.FAILED;
     failureMessage = message;
     updatedAt = Instant.now();
   }
 
-  private static void requireText(String value, String fieldName) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(fieldName + " is required");
-    }
-  }
 }
