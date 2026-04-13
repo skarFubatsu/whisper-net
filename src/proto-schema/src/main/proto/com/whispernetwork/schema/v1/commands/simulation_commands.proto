@@ -10,6 +10,7 @@ message SimulationRequestedCommand {
   int32 network_version_number = 2;
   string requested_by_actor_id = 3;
   string client_request_id = 4;
+  int32 requested_ticks = 5;
 }
 
 message SimulationCancelRequestedCommand {

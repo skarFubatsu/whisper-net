@@ -22,6 +22,28 @@ message SimulationCancelledEvent {
   int64 cancelled_at_epoch_millis = 5;
 }
 
+message SimulationTickCompletedEvent {
+  string simulation_run_id = 1;
+  string network_id = 2;
+  int32 tick_number = 3;
+  int32 updated_agents = 4;
+  int64 occurred_at_epoch_millis = 5;
+}
+
+message SimulationCompletedEvent {
+  string simulation_run_id = 1;
+  string network_id = 2;
+  int32 completed_ticks = 3;
+  int64 completed_at_epoch_millis = 4;
+}
+
+message SimulationFailedEvent {
+  string simulation_run_id = 1;
+  string network_id = 2;
+  string reason = 3;
+  int64 failed_at_epoch_millis = 4;
+}
+
 message OpinionUpdatedEvent {
   string simulation_run_id = 1;
   string network_id = 2;
@@ -36,4 +58,5 @@ message OpinionUpdatedEvent {
   bool relayed_as_is = 9;
   string relay_origin_agent_id = 10;
   bool ignored_trust_and_weight = 11;
+  int64 occurred_at_epoch_millis = 12;
 }
