@@ -6,60 +6,73 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.whispernetwork.schema.v1.commands.SimulationCancelRequestedCommand;
 import com.whispernetwork.schema.v1.commands.SimulationRequestedCommand;
 import java.lang.reflect.Method;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("RabbitMqSimulationCommandWorker")
 class RabbitMqSimulationCommandWorkerTest {
 
-    @Test
-    void shouldParseSimulationRequestedPayload() throws Exception {
-        byte[] payload = SimulationRequestedCommand.newBuilder()
-                .setNetworkId("network-1")
-                .setNetworkVersionNumber(2)
-                .setRequestedByActorId("actor-1")
-                .setClientRequestId("request-1")
-                .setRequestedTicks(5)
-                .setEventId("event-1")
-                .build()
-                .toByteArray();
+    @Nested
+    @DisplayName("Requested Command Parsing")
+    class RequestedParsing {
 
-        SimulationRequestedCommand parsed = invokeParseRequested(payload);
+        @Test
+        void shouldParseSimulationRequestedPayload() throws Exception {
+            byte[] payload = SimulationRequestedCommand.newBuilder()
+                    .setNetworkId("network-1")
+                    .setNetworkVersionNumber(2)
+                    .setRequestedByActorId("actor-1")
+                    .setClientRequestId("request-1")
+                    .setRequestedTicks(5)
+                    .setEventId("event-1")
+                    .build()
+                    .toByteArray();
 
-        assertEquals("network-1", parsed.getNetworkId());
-        assertEquals(2, parsed.getNetworkVersionNumber());
-        assertEquals("actor-1", parsed.getRequestedByActorId());
-        assertEquals("request-1", parsed.getClientRequestId());
-        assertEquals(5, parsed.getRequestedTicks());
-        assertEquals("event-1", parsed.getEventId());
+            SimulationRequestedCommand parsed = invokeParseRequested(payload);
+
+            assertEquals("network-1", parsed.getNetworkId());
+            assertEquals(2, parsed.getNetworkVersionNumber());
+            assertEquals("actor-1", parsed.getRequestedByActorId());
+            assertEquals("request-1", parsed.getClientRequestId());
+            assertEquals(5, parsed.getRequestedTicks());
+            assertEquals("event-1", parsed.getEventId());
+        }
+
+        @Test
+        void shouldRejectInvalidSimulationRequestedPayload() {
+            assertThrows(IllegalArgumentException.class, () -> invokeParseRequested(new byte[] {1, 2, 3}));
+        }
     }
 
-    @Test
-    void shouldRejectInvalidSimulationRequestedPayload() {
-        assertThrows(IllegalArgumentException.class, () -> invokeParseRequested(new byte[] {1, 2, 3}));
-    }
+    @Nested
+    @DisplayName("Cancel Command Parsing")
+    class CancelParsing {
 
-    @Test
-    void shouldParseSimulationCancelPayload() throws Exception {
-        byte[] payload = SimulationCancelRequestedCommand.newBuilder()
-                .setSimulationRunId("run-1")
-                .setNetworkId("network-1")
-                .setRequestedByActorId("actor-1")
-                .setClientRequestId("cancel-1")
-                .setEventId("event-2")
-                .build()
-                .toByteArray();
+        @Test
+        void shouldParseSimulationCancelPayload() throws Exception {
+            byte[] payload = SimulationCancelRequestedCommand.newBuilder()
+                    .setSimulationRunId("run-1")
+                    .setNetworkId("network-1")
+                    .setRequestedByActorId("actor-1")
+                    .setClientRequestId("cancel-1")
+                    .setEventId("event-2")
+                    .build()
+                    .toByteArray();
 
-        SimulationCancelRequestedCommand parsed = invokeParseCancel(payload);
+            SimulationCancelRequestedCommand parsed = invokeParseCancel(payload);
 
-        assertEquals("run-1", parsed.getSimulationRunId());
-        assertEquals("network-1", parsed.getNetworkId());
-        assertEquals("actor-1", parsed.getRequestedByActorId());
-        assertEquals("cancel-1", parsed.getClientRequestId());
-        assertEquals("event-2", parsed.getEventId());
-    }
+            assertEquals("run-1", parsed.getSimulationRunId());
+            assertEquals("network-1", parsed.getNetworkId());
+            assertEquals("actor-1", parsed.getRequestedByActorId());
+            assertEquals("cancel-1", parsed.getClientRequestId());
+            assertEquals("event-2", parsed.getEventId());
+        }
 
-    @Test
-    void shouldRejectInvalidSimulationCancelPayload() {
-        assertThrows(IllegalArgumentException.class, () -> invokeParseCancel(new byte[] {4, 5, 6}));
+        @Test
+        void shouldRejectInvalidSimulationCancelPayload() {
+            assertThrows(IllegalArgumentException.class, () -> invokeParseCancel(new byte[] {4, 5, 6}));
+        }
     }
 
     private static SimulationRequestedCommand invokeParseRequested(byte[] payload) throws Exception {

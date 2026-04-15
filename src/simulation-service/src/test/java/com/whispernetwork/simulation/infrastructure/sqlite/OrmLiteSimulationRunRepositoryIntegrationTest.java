@@ -11,68 +11,81 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("OrmLiteSimulationRunRepository")
 class OrmLiteSimulationRunRepositoryIntegrationTest {
 
-    @Test
-    void shouldPersistAndLoadSimulationRunRoundTrip() {
-        String jdbcUrl = newTempFileDbUrl();
-        migrateSchema(jdbcUrl);
+    @Nested
+    @DisplayName("Persistence")
+    class PersistenceTests {
 
-        String runId = UUID.randomUUID().toString();
-        SimulationRun run = new SimulationRun(runId, "network-a", 1, "actor-a", "req-a", 3);
-        run.markRunning();
-        run.incrementCompletedTicks();
-        run.markCancelling("actor-b", "cancel-1");
+        @Test
+        void shouldPersistAndLoadSimulationRunRoundTrip() {
+            String jdbcUrl = newTempFileDbUrl();
+            migrateSchema(jdbcUrl);
 
-        try (OrmLiteSimulationRunRepository repository = new OrmLiteSimulationRunRepository(jdbcUrl)) {
-            repository.save(run);
+            String runId = UUID.randomUUID().toString();
+            SimulationRun run = new SimulationRun(runId, "network-a", 1, "actor-a", "req-a", 3);
+            run.markRunning();
+            run.incrementCompletedTicks();
+            run.markCancelling("actor-b", "cancel-1");
 
-            SimulationRun loaded = repository.findById(runId).orElseThrow();
-            assertEquals(runId, loaded.getId());
-            assertEquals("network-a", loaded.getNetworkId());
-            assertEquals(1, loaded.getNetworkVersionNumber());
-            assertEquals("actor-a", loaded.getRequestedByActorId());
-            assertEquals("req-a", loaded.getClientRequestId());
-            assertEquals(3, loaded.getRequestedTicks());
-            assertEquals(RunStatus.CANCELLING, loaded.getStatus());
-            assertEquals(1, loaded.getCompletedTicks());
-            assertEquals("actor-b", loaded.getCancellationRequestedByActorId());
-            assertEquals("cancel-1", loaded.getCancellationClientRequestId());
+            try (OrmLiteSimulationRunRepository repository = new OrmLiteSimulationRunRepository(jdbcUrl)) {
+                repository.save(run);
+
+                SimulationRun loaded = repository.findById(runId).orElseThrow();
+                assertEquals(runId, loaded.getId());
+                assertEquals("network-a", loaded.getNetworkId());
+                assertEquals(1, loaded.getNetworkVersionNumber());
+                assertEquals("actor-a", loaded.getRequestedByActorId());
+                assertEquals("req-a", loaded.getClientRequestId());
+                assertEquals(3, loaded.getRequestedTicks());
+                assertEquals(RunStatus.CANCELLING, loaded.getStatus());
+                assertEquals(1, loaded.getCompletedTicks());
+                assertEquals("actor-b", loaded.getCancellationRequestedByActorId());
+                assertEquals("cancel-1", loaded.getCancellationClientRequestId());
+            }
         }
     }
 
-    @Test
-    void shouldFindActiveRunAndPreserveIdempotencyMapping() {
-        String jdbcUrl = newTempFileDbUrl();
-        migrateSchema(jdbcUrl);
+    @Nested
+    @DisplayName("Idempotency")
+    class IdempotencyTests {
 
-        SimulationRun active =
-                new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-active", 2);
-        active.markRunning();
+        @Test
+        void shouldFindActiveRunAndPreserveIdempotencyMapping() {
+            String jdbcUrl = newTempFileDbUrl();
+            migrateSchema(jdbcUrl);
 
-        SimulationRun terminal =
-                new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-terminal", 1);
-        terminal.markRunning();
-        terminal.markCompleted();
+            SimulationRun active =
+                    new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-active", 2);
+            active.markRunning();
 
-        IdempotencyKey key = new IdempotencyKey("SIMULATION_START", "actor-a", "req-active");
+            SimulationRun terminal =
+                    new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-terminal", 1);
+            terminal.markRunning();
+            terminal.markCompleted();
 
-        try (OrmLiteSimulationRunRepository repository = new OrmLiteSimulationRunRepository(jdbcUrl)) {
-            repository.save(terminal);
-            repository.save(active);
+            IdempotencyKey key = new IdempotencyKey("SIMULATION_START", "actor-a", "req-active");
 
-            SimulationRun activeFound =
-                    repository.findActiveByNetwork("network-a").orElseThrow();
-            assertEquals(active.getId(), activeFound.getId());
+            try (OrmLiteSimulationRunRepository repository = new OrmLiteSimulationRunRepository(jdbcUrl)) {
+                repository.save(terminal);
+                repository.save(active);
 
-            repository.putIdempotency(key, active.getId());
-            repository.putIdempotency(key, terminal.getId());
+                SimulationRun activeFound =
+                        repository.findActiveByNetwork("network-a").orElseThrow();
+                assertEquals(active.getId(), activeFound.getId());
 
-            Optional<String> runIdByKey = repository.findByIdempotency(key);
-            assertTrue(runIdByKey.isPresent());
-            assertEquals(active.getId(), runIdByKey.get());
+                repository.putIdempotency(key, active.getId());
+                repository.putIdempotency(key, terminal.getId());
+
+                Optional<String> runIdByKey = repository.findByIdempotency(key);
+                assertTrue(runIdByKey.isPresent());
+                assertEquals(active.getId(), runIdByKey.get());
+            }
         }
     }
 

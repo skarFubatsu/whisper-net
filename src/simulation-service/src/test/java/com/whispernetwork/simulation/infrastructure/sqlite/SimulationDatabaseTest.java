@@ -4,38 +4,51 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("SimulationDatabase")
 class SimulationDatabaseTest {
 
-    @Test
-    void shouldUseSharedInMemoryUrlAsDefaultFallback() throws Exception {
-        Field defaultDbUrlField = SimulationDatabase.class.getDeclaredField("DEFAULT_DB_URL");
-        defaultDbUrlField.setAccessible(true);
+    @Nested
+    @DisplayName("Defaults")
+    class DefaultsTests {
 
-        String defaultDbUrl = (String) defaultDbUrlField.get(null);
+        @Test
+        void shouldUseSharedInMemoryUrlAsDefaultFallback() throws Exception {
+            Field defaultDbUrlField = SimulationDatabase.class.getDeclaredField("DEFAULT_DB_URL");
+            defaultDbUrlField.setAccessible(true);
 
-        assertEquals("jdbc:sqlite:file:simulation_mem?mode=memory&cache=shared", defaultDbUrl);
+            String defaultDbUrl = (String) defaultDbUrlField.get(null);
+
+            assertEquals("jdbc:sqlite:file:simulation_mem?mode=memory&cache=shared", defaultDbUrl);
+        }
     }
 
-    @Test
-    void shouldNormalizeNonJdbcSqlitePathToJdbcForm() throws Exception {
-        Method normalizeMethod = SimulationDatabase.class.getDeclaredMethod("normalizeJdbcUrl", String.class);
-        normalizeMethod.setAccessible(true);
+    @Nested
+    @DisplayName("Normalization")
+    class NormalizationTests {
 
-        String normalized = (String) normalizeMethod.invoke(null, "var/data/simulation.db");
+        @Test
+        void shouldNormalizeNonJdbcSqlitePathToJdbcForm() throws Exception {
+            Method normalizeMethod = SimulationDatabase.class.getDeclaredMethod("normalizeJdbcUrl", String.class);
+            normalizeMethod.setAccessible(true);
 
-        assertEquals("jdbc:sqlite:var/data/simulation.db", normalized);
-    }
+            String normalized = (String) normalizeMethod.invoke(null, "var/data/simulation.db");
 
-    @Test
-    void shouldKeepJdbcSqliteUrlUnchanged() throws Exception {
-        Method normalizeMethod = SimulationDatabase.class.getDeclaredMethod("normalizeJdbcUrl", String.class);
-        normalizeMethod.setAccessible(true);
+            assertEquals("jdbc:sqlite:var/data/simulation.db", normalized);
+        }
 
-        String original = "jdbc:sqlite:file:integration_test?mode=memory&cache=shared";
-        String normalized = (String) normalizeMethod.invoke(null, original);
+        @Test
+        void shouldKeepJdbcSqliteUrlUnchanged() throws Exception {
+            Method normalizeMethod = SimulationDatabase.class.getDeclaredMethod("normalizeJdbcUrl", String.class);
+            normalizeMethod.setAccessible(true);
 
-        assertEquals(original, normalized);
+            String original = "jdbc:sqlite:file:integration_test?mode=memory&cache=shared";
+            String normalized = (String) normalizeMethod.invoke(null, original);
+
+            assertEquals(original, normalized);
+        }
     }
 }

@@ -6,31 +6,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("SimulationCommandReceiptService")
 class SimulationCommandReceiptServiceIntegrationTest {
 
-    @Test
-    void shouldMarkNewEventIdAndRejectDuplicate() {
-        String jdbcUrl = newTempFileDbUrl();
-        migrateSchema(jdbcUrl);
+    @Nested
+    @DisplayName("Marking")
+    class MarkingTests {
 
-        SimulationCommandReceiptService receiptService = new SimulationCommandReceiptService(jdbcUrl);
+        @Test
+        void shouldMarkNewEventIdAndRejectDuplicate() {
+            String jdbcUrl = newTempFileDbUrl();
+            migrateSchema(jdbcUrl);
 
-        assertTrue(receiptService.markReceivedIfNew("event-1"));
-        assertFalse(receiptService.markReceivedIfNew("event-1"));
+            SimulationCommandReceiptService receiptService = new SimulationCommandReceiptService(jdbcUrl);
+
+            assertTrue(receiptService.markReceivedIfNew("event-1"));
+            assertFalse(receiptService.markReceivedIfNew("event-1"));
+        }
     }
 
-    @Test
-    void shouldAllowBlankEventIds() {
-        String jdbcUrl = newTempFileDbUrl();
-        migrateSchema(jdbcUrl);
+    @Nested
+    @DisplayName("BlankIds")
+    class BlankIdsTests {
 
-        SimulationCommandReceiptService receiptService = new SimulationCommandReceiptService(jdbcUrl);
+        @Test
+        void shouldAllowBlankEventIds() {
+            String jdbcUrl = newTempFileDbUrl();
+            migrateSchema(jdbcUrl);
 
-        assertTrue(receiptService.markReceivedIfNew(""));
-        assertTrue(receiptService.markReceivedIfNew("   "));
-        assertTrue(receiptService.markReceivedIfNew(null));
+            SimulationCommandReceiptService receiptService = new SimulationCommandReceiptService(jdbcUrl);
+
+            assertTrue(receiptService.markReceivedIfNew(""));
+            assertTrue(receiptService.markReceivedIfNew("   "));
+            assertTrue(receiptService.markReceivedIfNew(null));
+        }
     }
 
     private static String newTempFileDbUrl() {

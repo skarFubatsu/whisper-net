@@ -5,39 +5,57 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.whispernetwork.shared.dto.RunStatus;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("SimulationRun")
 class SimulationRunTest {
 
-    @Test
-    void shouldTransitionFromRequestedToCompletedThroughRunning() {
-        SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-a", 2);
+    @Nested
+    @DisplayName("Lifecycle")
+    class LifecycleTests {
 
-        run.markRunning();
-        run.incrementCompletedTicks();
-        run.incrementCompletedTicks();
-        run.markCompleted();
+        @Test
+        void shouldTransitionFromRequestedToCompletedThroughRunning() {
+            SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-a", 2);
 
-        assertEquals(RunStatus.COMPLETED, run.getStatus());
-        assertEquals(2, run.getCompletedTicks());
+            run.markRunning();
+            run.incrementCompletedTicks();
+            run.incrementCompletedTicks();
+            run.markCompleted();
+
+            assertEquals(RunStatus.COMPLETED, run.getStatus());
+            assertEquals(2, run.getCompletedTicks());
+        }
     }
 
-    @Test
-    void shouldRejectInvalidTransitionToCompletedFromRequested() {
-        SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-a", 1);
+    @Nested
+    @DisplayName("InvalidTransitions")
+    class InvalidTransitionsTests {
 
-        assertThrows(IllegalStateException.class, run::markCompleted);
+        @Test
+        void shouldRejectInvalidTransitionToCompletedFromRequested() {
+            SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-a", 1);
+
+            assertThrows(IllegalStateException.class, run::markCompleted);
+        }
     }
 
-    @Test
-    void shouldMarkCancellingFromRunningAndCaptureRequester() {
-        SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-a", 1);
-        run.markRunning();
+    @Nested
+    @DisplayName("Cancellation")
+    class CancellationTests {
 
-        run.markCancelling("actor-b", "cancel-1");
+        @Test
+        void shouldMarkCancellingFromRunningAndCaptureRequester() {
+            SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-a", "req-a", 1);
+            run.markRunning();
 
-        assertEquals(RunStatus.CANCELLING, run.getStatus());
-        assertEquals("actor-b", run.getCancellationRequestedByActorId());
-        assertEquals("cancel-1", run.getCancellationClientRequestId());
+            run.markCancelling("actor-b", "cancel-1");
+
+            assertEquals(RunStatus.CANCELLING, run.getStatus());
+            assertEquals("actor-b", run.getCancellationRequestedByActorId());
+            assertEquals("cancel-1", run.getCancellationClientRequestId());
+        }
     }
 }

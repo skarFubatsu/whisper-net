@@ -27,144 +27,162 @@ import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("SimulationOrchestrator")
 class SimulationOrchestratorTest {
 
-    @Test
-    void shouldRunSimulationAndPublishLifecycleEvents() {
-        StubSimulationRunRepository repository = new StubSimulationRunRepository();
-        CapturingSimulationEventPort eventPort = new CapturingSimulationEventPort();
-        InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
-        RuntimeNetworkFixtures.registerDefaults(networkProvider);
+    @Nested
+    @DisplayName("Lifecycle")
+    class LifecycleTests {
 
-        try (ExecutorService executor = new DirectExecutorService();
-                SimulationOrchestrator orchestrator = new SimulationOrchestrator(
-                        new SimulationTickEngine(new OpinionAggregator()),
-                        repository,
-                        networkProvider,
-                        eventPort,
-                        executor)) {
+        @Test
+        void shouldRunSimulationAndPublishLifecycleEvents() {
+            StubSimulationRunRepository repository = new StubSimulationRunRepository();
+            CapturingSimulationEventPort eventPort = new CapturingSimulationEventPort();
+            InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
+            RuntimeNetworkFixtures.registerDefaults(networkProvider);
 
-            String runId = orchestrator.requestSimulation(
-                    new SimulationStartCommand("golden-cascade", 1, "actor-1", "req-1", 2));
+            try (ExecutorService executor = new DirectExecutorService();
+                    SimulationOrchestrator orchestrator = new SimulationOrchestrator(
+                            new SimulationTickEngine(new OpinionAggregator()),
+                            repository,
+                            networkProvider,
+                            eventPort,
+                            executor)) {
 
-            SimulationRun run = repository.findById(runId).orElseThrow();
-            assertEquals(RunStatus.COMPLETED, run.getStatus());
-            assertEquals(2, run.getCompletedTicks());
+                String runId = orchestrator.requestSimulation(
+                        new SimulationStartCommand("golden-cascade", 1, "actor-1", "req-1", 2));
 
-            assertEquals(4, eventPort.events.size());
-            assertInstanceOf(SimulationEvent.SimulationStarted.class, eventPort.events.get(0));
-            assertInstanceOf(SimulationEvent.SimulationTickCompleted.class, eventPort.events.get(1));
-            assertInstanceOf(SimulationEvent.SimulationTickCompleted.class, eventPort.events.get(2));
-            assertInstanceOf(SimulationEvent.SimulationCompleted.class, eventPort.events.get(3));
+                SimulationRun run = repository.findById(runId).orElseThrow();
+                assertEquals(RunStatus.COMPLETED, run.getStatus());
+                assertEquals(2, run.getCompletedTicks());
+
+                assertEquals(4, eventPort.events.size());
+                assertInstanceOf(SimulationEvent.SimulationStarted.class, eventPort.events.get(0));
+                assertInstanceOf(SimulationEvent.SimulationTickCompleted.class, eventPort.events.get(1));
+                assertInstanceOf(SimulationEvent.SimulationTickCompleted.class, eventPort.events.get(2));
+                assertInstanceOf(SimulationEvent.SimulationCompleted.class, eventPort.events.get(3));
+            }
         }
     }
 
-    @Test
-    void shouldReturnExistingRunForDuplicateStartCommand() {
-        StubSimulationRunRepository repository = new StubSimulationRunRepository();
-        CapturingSimulationEventPort eventPort = new CapturingSimulationEventPort();
-        InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
-        RuntimeNetworkFixtures.registerDefaults(networkProvider);
+    @Nested
+    @DisplayName("Idempotency")
+    class IdempotencyTests {
 
-        try (ExecutorService executor = new DirectExecutorService();
-                SimulationOrchestrator orchestrator = new SimulationOrchestrator(
-                        new SimulationTickEngine(new OpinionAggregator()),
-                        repository,
-                        networkProvider,
-                        eventPort,
-                        executor)) {
+        @Test
+        void shouldReturnExistingRunForDuplicateStartCommand() {
+            StubSimulationRunRepository repository = new StubSimulationRunRepository();
+            CapturingSimulationEventPort eventPort = new CapturingSimulationEventPort();
+            InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
+            RuntimeNetworkFixtures.registerDefaults(networkProvider);
 
-            SimulationStartCommand command =
-                    new SimulationStartCommand("golden-cascade", 1, "actor-1", "req-idempotent", 1);
+            try (ExecutorService executor = new DirectExecutorService();
+                    SimulationOrchestrator orchestrator = new SimulationOrchestrator(
+                            new SimulationTickEngine(new OpinionAggregator()),
+                            repository,
+                            networkProvider,
+                            eventPort,
+                            executor)) {
 
-            String firstRunId = orchestrator.requestSimulation(command);
-            String secondRunId = orchestrator.requestSimulation(command);
+                SimulationStartCommand command =
+                        new SimulationStartCommand("golden-cascade", 1, "actor-1", "req-idempotent", 1);
 
-            assertEquals(firstRunId, secondRunId);
-            assertEquals(3, eventPort.events.size());
+                String firstRunId = orchestrator.requestSimulation(command);
+                String secondRunId = orchestrator.requestSimulation(command);
+
+                assertEquals(firstRunId, secondRunId);
+                assertEquals(3, eventPort.events.size());
+            }
         }
     }
 
-    @Test
-    void shouldRejectNewStartWhenActiveRunExistsForSameNetwork() {
-        StubSimulationRunRepository repository = new StubSimulationRunRepository();
-        SimulationRun activeRun =
-                new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-1", "req-1", 1);
-        activeRun.markRunning();
-        repository.save(activeRun);
+    @Nested
+    @DisplayName("Cancellation")
+    class CancellationTests {
 
-        InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
-        RuntimeNetworkFixtures.registerDefaults(networkProvider);
+        @Test
+        void shouldRejectNewStartWhenActiveRunExistsForSameNetwork() {
+            StubSimulationRunRepository repository = new StubSimulationRunRepository();
+            SimulationRun activeRun =
+                    new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-1", "req-1", 1);
+            activeRun.markRunning();
+            repository.save(activeRun);
 
-        try (ExecutorService executor = new DirectExecutorService();
-                SimulationOrchestrator orchestrator = new SimulationOrchestrator(
-                        new SimulationTickEngine(new OpinionAggregator()),
-                        repository,
-                        networkProvider,
-                        eventPortNoop(),
-                        executor)) {
+            InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
+            RuntimeNetworkFixtures.registerDefaults(networkProvider);
 
-            assertThrows(
-                    IllegalStateException.class,
-                    () -> orchestrator.requestSimulation(
-                            new SimulationStartCommand("network-a", 1, "actor-2", "req-2", 1)));
+            try (ExecutorService executor = new DirectExecutorService();
+                    SimulationOrchestrator orchestrator = new SimulationOrchestrator(
+                            new SimulationTickEngine(new OpinionAggregator()),
+                            repository,
+                            networkProvider,
+                            eventPortNoop(),
+                            executor)) {
+
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> orchestrator.requestSimulation(
+                                new SimulationStartCommand("network-a", 1, "actor-2", "req-2", 1)));
+            }
         }
-    }
 
-    @Test
-    void shouldCancelExistingRunWhenNetworkMatches() {
-        StubSimulationRunRepository repository = new StubSimulationRunRepository();
-        SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-1", "req-1", 1);
-        repository.save(run);
+        @Test
+        void shouldCancelExistingRunWhenNetworkMatches() {
+            StubSimulationRunRepository repository = new StubSimulationRunRepository();
+            SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-1", "req-1", 1);
+            repository.save(run);
 
-        InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
-        RuntimeNetworkFixtures.registerDefaults(networkProvider);
+            InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
+            RuntimeNetworkFixtures.registerDefaults(networkProvider);
 
-        try (ExecutorService executor = new DirectExecutorService();
-                SimulationOrchestrator orchestrator = new SimulationOrchestrator(
-                        new SimulationTickEngine(new OpinionAggregator()),
-                        repository,
-                        networkProvider,
-                        eventPortNoop(),
-                        executor)) {
+            try (ExecutorService executor = new DirectExecutorService();
+                    SimulationOrchestrator orchestrator = new SimulationOrchestrator(
+                            new SimulationTickEngine(new OpinionAggregator()),
+                            repository,
+                            networkProvider,
+                            eventPortNoop(),
+                            executor)) {
 
-            boolean cancelled = orchestrator.requestCancellation(
-                    new SimulationCancelCommand(run.getId(), "network-a", "actor-2", "cancel-1"));
+                boolean cancelled = orchestrator.requestCancellation(
+                        new SimulationCancelCommand(run.getId(), "network-a", "actor-2", "cancel-1"));
 
-            assertTrue(cancelled);
-            SimulationRun updated = repository.findById(run.getId()).orElseThrow();
-            assertEquals(RunStatus.CANCELLING, updated.getStatus());
-            assertEquals("actor-2", updated.getCancellationRequestedByActorId());
-            assertEquals("cancel-1", updated.getCancellationClientRequestId());
+                assertTrue(cancelled);
+                SimulationRun updated = repository.findById(run.getId()).orElseThrow();
+                assertEquals(RunStatus.CANCELLING, updated.getStatus());
+                assertEquals("actor-2", updated.getCancellationRequestedByActorId());
+                assertEquals("cancel-1", updated.getCancellationClientRequestId());
+            }
         }
-    }
 
-    @Test
-    void shouldReturnFalseWhenCancelNetworkDoesNotMatch() {
-        StubSimulationRunRepository repository = new StubSimulationRunRepository();
-        SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-1", "req-1", 1);
-        repository.save(run);
+        @Test
+        void shouldReturnFalseWhenCancelNetworkDoesNotMatch() {
+            StubSimulationRunRepository repository = new StubSimulationRunRepository();
+            SimulationRun run = new SimulationRun(UUID.randomUUID().toString(), "network-a", 1, "actor-1", "req-1", 1);
+            repository.save(run);
 
-        InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
-        RuntimeNetworkFixtures.registerDefaults(networkProvider);
+            InMemoryInfluenceNetworkProvider networkProvider = new InMemoryInfluenceNetworkProvider();
+            RuntimeNetworkFixtures.registerDefaults(networkProvider);
 
-        try (ExecutorService executor = new DirectExecutorService();
-                SimulationOrchestrator orchestrator = new SimulationOrchestrator(
-                        new SimulationTickEngine(new OpinionAggregator()),
-                        repository,
-                        networkProvider,
-                        eventPortNoop(),
-                        executor)) {
+            try (ExecutorService executor = new DirectExecutorService();
+                    SimulationOrchestrator orchestrator = new SimulationOrchestrator(
+                            new SimulationTickEngine(new OpinionAggregator()),
+                            repository,
+                            networkProvider,
+                            eventPortNoop(),
+                            executor)) {
 
-            boolean cancelled = orchestrator.requestCancellation(
-                    new SimulationCancelCommand(run.getId(), "network-b", "actor-2", "cancel-1"));
+                boolean cancelled = orchestrator.requestCancellation(
+                        new SimulationCancelCommand(run.getId(), "network-b", "actor-2", "cancel-1"));
 
-            assertFalse(cancelled);
-            assertEquals(
-                    RunStatus.REQUESTED,
-                    repository.findById(run.getId()).orElseThrow().getStatus());
+                assertFalse(cancelled);
+                assertEquals(
+                        RunStatus.REQUESTED,
+                        repository.findById(run.getId()).orElseThrow().getStatus());
+            }
         }
     }
 

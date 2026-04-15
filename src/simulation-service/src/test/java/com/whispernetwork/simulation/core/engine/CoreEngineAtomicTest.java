@@ -13,71 +13,89 @@ import com.whispernetwork.simulation.core.model.Relationship;
 import com.whispernetwork.simulation.core.model.RelationshipTransmissionMode;
 import com.whispernetwork.simulation.core.model.RelationshipType;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("CoreEngineAtomic")
 class CoreEngineAtomicTest {
 
-    @Test
-    void shouldAggregateWithWeightedNormalFlow() {
-        InfluenceNetwork network = networkWithSingleTriggerAndNormalTarget();
-        AgentState target = network.getAgent(targetId(network));
+    @Nested
+    @DisplayName("Aggregation")
+    class AggregationTests {
 
-        OpinionAggregationResult result = new OpinionAggregator().aggregate(network, target);
+        @Test
+        void shouldAggregateWithWeightedNormalFlow() {
+            InfluenceNetwork network = networkWithSingleTriggerAndNormalTarget();
+            AgentState target = network.getAgent(targetId(network));
 
-        assertFalse(result.relayedAsIs());
-        assertFalse(result.ignoredTrustAndWeight());
-        assertTrue(result.incomingInfluenceMagnitude() > 0.0);
-        assertTrue(result.newOpinionValue() >= -1.0 && result.newOpinionValue() <= 1.0);
-        assertEquals(1, result.contributingSourceAgentIds().size());
+            OpinionAggregationResult result = new OpinionAggregator().aggregate(network, target);
+
+            assertFalse(result.relayedAsIs());
+            assertFalse(result.ignoredTrustAndWeight());
+            assertTrue(result.incomingInfluenceMagnitude() > 0.0);
+            assertTrue(result.newOpinionValue() >= -1.0 && result.newOpinionValue() <= 1.0);
+            assertEquals(1, result.contributingSourceAgentIds().size());
+        }
     }
 
-    @Test
-    void shouldRelayAsIsForRelayChannelInput() {
-        String trigger = UUID.randomUUID().toString();
-        String relay = UUID.randomUUID().toString();
-        String target = UUID.randomUUID().toString();
+    @Nested
+    @DisplayName("Relay")
+    class RelayTests {
 
-        InfluenceNetwork network = new InfluenceNetwork("relay-net", 1);
-        AgentState triggerAgent = new AgentState(trigger, new Persona(0.0, 0.1, 1.0, 0.0), AgentRole.TRIGGER, 0.9);
-        AgentState relayAgent = new AgentState(relay, new Persona(0.0, 0.1, 1.0, 0.0), AgentRole.RELAY, 0.9);
-        relayAgent.setRelayOriginAgentId(trigger);
-        AgentState targetAgent = new AgentState(target, new Persona(0.0, 0.2, 0.9, 0.0), AgentRole.NORMAL, -0.2);
+        @Test
+        void shouldRelayAsIsForRelayChannelInput() {
+            String trigger = UUID.randomUUID().toString();
+            String relay = UUID.randomUUID().toString();
+            String target = UUID.randomUUID().toString();
 
-        network.addAgent(triggerAgent);
-        network.addAgent(relayAgent);
-        network.addAgent(targetAgent);
+            InfluenceNetwork network = new InfluenceNetwork("relay-net", 1);
+            AgentState triggerAgent = new AgentState(trigger, new Persona(0.0, 0.1, 1.0, 0.0), AgentRole.TRIGGER, 0.9);
+            AgentState relayAgent = new AgentState(relay, new Persona(0.0, 0.1, 1.0, 0.0), AgentRole.RELAY, 0.9);
+            relayAgent.setRelayOriginAgentId(trigger);
+            AgentState targetAgent = new AgentState(target, new Persona(0.0, 0.2, 0.9, 0.0), AgentRole.NORMAL, -0.2);
 
-        addMirror(network, "tr", "rt", trigger, relay, 1.0, 1.0, RelationshipTransmissionMode.NORMAL_FLOW);
-        addMirror(network, "rx", "xr", relay, target, 0.01, 0.01, RelationshipTransmissionMode.RELAY_CHANNEL);
+            network.addAgent(triggerAgent);
+            network.addAgent(relayAgent);
+            network.addAgent(targetAgent);
 
-        OpinionAggregationResult result = new OpinionAggregator().aggregate(network, targetAgent);
+            addMirror(network, "tr", "rt", trigger, relay, 1.0, 1.0, RelationshipTransmissionMode.NORMAL_FLOW);
+            addMirror(network, "rx", "xr", relay, target, 0.01, 0.01, RelationshipTransmissionMode.RELAY_CHANNEL);
 
-        assertTrue(result.relayedAsIs());
-        assertTrue(result.ignoredTrustAndWeight());
-        assertEquals(trigger, result.relayOriginAgentId());
-        assertEquals(0.9, result.newOpinionValue(), 0.00001);
+            OpinionAggregationResult result = new OpinionAggregator().aggregate(network, targetAgent);
+
+            assertTrue(result.relayedAsIs());
+            assertTrue(result.ignoredTrustAndWeight());
+            assertEquals(trigger, result.relayOriginAgentId());
+            assertEquals(0.9, result.newOpinionValue(), 0.00001);
+        }
     }
 
-    @Test
-    void shouldValidateMirrorConsistencyAndRejectBrokenNetwork() {
-        InfluenceNetwork valid = networkWithSingleTriggerAndNormalTarget();
-        SimulationInvariantChecker checker = new SimulationInvariantChecker();
-        checker.validateNetwork(valid);
+    @Nested
+    @DisplayName("Validation")
+    class ValidationTests {
 
-        InfluenceNetwork broken = networkWithSingleTriggerAndNormalTarget();
-        String source = triggerId(broken);
-        String target = targetId(broken);
-        broken.addRelationship(new Relationship(
-                "broken-forward",
-                "missing-reverse",
-                source,
-                target,
-                1.0,
-                1.0,
-                RelationshipType.FRIEND,
-                RelationshipTransmissionMode.NORMAL_FLOW));
+        @Test
+        void shouldValidateMirrorConsistencyAndRejectBrokenNetwork() {
+            InfluenceNetwork valid = networkWithSingleTriggerAndNormalTarget();
+            SimulationInvariantChecker checker = new SimulationInvariantChecker();
+            checker.validateNetwork(valid);
 
-        assertThrows(IllegalStateException.class, () -> checker.validateNetwork(broken));
+            InfluenceNetwork broken = networkWithSingleTriggerAndNormalTarget();
+            String source = triggerId(broken);
+            String target = targetId(broken);
+            broken.addRelationship(new Relationship(
+                    "broken-forward",
+                    "missing-reverse",
+                    source,
+                    target,
+                    1.0,
+                    1.0,
+                    RelationshipType.FRIEND,
+                    RelationshipTransmissionMode.NORMAL_FLOW));
+
+            assertThrows(IllegalStateException.class, () -> checker.validateNetwork(broken));
+        }
     }
 
     private static InfluenceNetwork networkWithSingleTriggerAndNormalTarget() {
