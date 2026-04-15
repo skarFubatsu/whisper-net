@@ -5,15 +5,14 @@ package com.whispernetwork.shared.util;
  */
 public final class TextRequire {
 
-  private TextRequire() {
-  }
+    private TextRequire() {}
 
-  /**
-   * Ensures a required text value is present.
-   */
-  public static void nonBlank(String value, String fieldName) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(fieldName + " is required");
+    /**
+     * Ensures a required text value is present.
+     */
+    public static void nonBlank(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
     }
-  }
 }

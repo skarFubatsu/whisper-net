@@ -9,28 +9,28 @@ import java.util.Optional;
  */
 public interface SimulationRunRepository {
 
-  /**
-   * Saves or updates a run.
-   */
-  void save(SimulationRun run);
+    /**
+     * Saves or updates a run.
+     */
+    void save(SimulationRun run);
 
-  /**
-   * Finds a run by id.
-   */
-  Optional<SimulationRun> findById(String runId);
+    /**
+     * Finds a run by id.
+     */
+    Optional<SimulationRun> findById(String runId);
 
-  /**
-   * Finds the active run for a network, if any.
-   */
-  Optional<SimulationRun> findActiveByNetwork(String networkId);
+    /**
+     * Finds the active run for a network, if any.
+     */
+    Optional<SimulationRun> findActiveByNetwork(String networkId);
 
-  /**
-   * Stores idempotency mapping to run id.
-   */
-  void putIdempotency(IdempotencyKey key, String runId);
+    /**
+     * Stores idempotency mapping to run id.
+     */
+    void putIdempotency(IdempotencyKey key, String runId);
 
-  /**
-   * Finds existing run id for idempotency key.
-   */
-  Optional<String> findByIdempotency(IdempotencyKey key);
+    /**
+     * Finds existing run id for idempotency key.
+     */
+    Optional<String> findByIdempotency(IdempotencyKey key);
 }

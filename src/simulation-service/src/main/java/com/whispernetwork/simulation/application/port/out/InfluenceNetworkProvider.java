@@ -7,12 +7,12 @@ import com.whispernetwork.simulation.core.model.InfluenceNetwork;
  */
 public interface InfluenceNetworkProvider {
 
-  /**
-   * Loads a network snapshot by id and version.
-   *
-   * @param networkId network id
-   * @param networkVersionNumber version number
-   * @return deep-copyable network snapshot
-   */
-  InfluenceNetwork loadNetworkSnapshot(String networkId, int networkVersionNumber);
+    /**
+     * Loads a network snapshot by id and version.
+     *
+     * @param networkId network id
+     * @param networkVersionNumber version number
+     * @return deep-copyable network snapshot
+     */
+    InfluenceNetwork loadNetworkSnapshot(String networkId, int networkVersionNumber);
 }

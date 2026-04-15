@@ -14,4 +14,23 @@
     <module>src/simulation-service</module>
     <module>src/api-service</module>
   </modules>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.43.0</version>
+          <configuration>
+            <java>
+              <palantirJavaFormat/>
+              <formatAnnotations/>
+              <importOrder/>
+            </java>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>

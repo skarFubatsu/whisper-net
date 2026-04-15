@@ -11,6 +11,7 @@ message SimulationRequestedCommand {
   string requested_by_actor_id = 3;
   string client_request_id = 4;
   int32 requested_ticks = 5;
+  string event_id = 6;
 }
 
 message SimulationCancelRequestedCommand {
@@ -18,4 +19,5 @@ message SimulationCancelRequestedCommand {
   string network_id = 2;
   string requested_by_actor_id = 3;
   string client_request_id = 4;
+  string event_id = 5;
 }

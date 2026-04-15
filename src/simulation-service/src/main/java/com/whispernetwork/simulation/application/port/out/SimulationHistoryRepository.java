@@ -10,13 +10,13 @@ import java.util.List;
  */
 public interface SimulationHistoryRepository {
 
-  /**
-   * Persists one simulation event and any derived details.
-   */
-  void record(SimulationEvent event);
+    /**
+     * Persists one simulation event and any derived details.
+     */
+    void record(SimulationEvent event);
 
-  /**
-   * Lists timeline rows according to the provided filter and paging window.
-   */
-  List<SimulationHistoryEntry> list(TimelineQuery query);
+    /**
+     * Lists timeline rows according to the provided filter and paging window.
+     */
+    List<SimulationHistoryEntry> list(TimelineQuery query);
 }

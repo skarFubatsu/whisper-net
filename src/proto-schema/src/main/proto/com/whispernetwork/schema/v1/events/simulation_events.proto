@@ -12,6 +12,9 @@ message SimulationStartedEvent {
   string initiated_by_actor_id = 4;
   string client_request_id = 5;
   int64 started_at_epoch_millis = 6;
+  string event_id = 7;
+  string owner_id = 8;
+  string request_id = 9;
 }
 
 message SimulationCancelledEvent {
@@ -20,6 +23,9 @@ message SimulationCancelledEvent {
   string cancelled_by_actor_id = 3;
   string client_request_id = 4;
   int64 cancelled_at_epoch_millis = 5;
+  string event_id = 6;
+  string owner_id = 7;
+  string request_id = 8;
 }
 
 message SimulationTickCompletedEvent {
@@ -28,6 +34,9 @@ message SimulationTickCompletedEvent {
   int32 tick_number = 3;
   int32 updated_agents = 4;
   int64 occurred_at_epoch_millis = 5;
+  string event_id = 6;
+  string owner_id = 7;
+  string request_id = 8;
 }
 
 message SimulationCompletedEvent {
@@ -35,6 +44,9 @@ message SimulationCompletedEvent {
   string network_id = 2;
   int32 completed_ticks = 3;
   int64 completed_at_epoch_millis = 4;
+  string event_id = 5;
+  string owner_id = 6;
+  string request_id = 7;
 }
 
 message SimulationFailedEvent {
@@ -42,6 +54,9 @@ message SimulationFailedEvent {
   string network_id = 2;
   string reason = 3;
   int64 failed_at_epoch_millis = 4;
+  string event_id = 5;
+  string owner_id = 6;
+  string request_id = 7;
 }
 
 message OpinionUpdatedEvent {
@@ -59,4 +74,7 @@ message OpinionUpdatedEvent {
   string relay_origin_agent_id = 10;
   bool ignored_trust_and_weight = 11;
   int64 occurred_at_epoch_millis = 12;
+  string event_id = 13;
+  string owner_id = 14;
+  string request_id = 15;
 }

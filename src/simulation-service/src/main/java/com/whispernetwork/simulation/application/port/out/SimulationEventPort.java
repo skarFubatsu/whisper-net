@@ -7,10 +7,10 @@ import com.whispernetwork.simulation.application.model.SimulationEvent;
  */
 public interface SimulationEventPort {
 
-  /**
-   * Publishes an application event.
-   *
-   * @param event simulation event
-   */
-  void publish(SimulationEvent event);
+    /**
+     * Publishes an application event.
+     *
+     * @param event simulation event
+     */
+    void publish(SimulationEvent event);
 }
