@@ -22,7 +22,7 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
 
   private final JdbcConnectionSource connectionSource;
   private final Dao<SimulationRunRow, String> runDao;
-  private final Dao<IdempotencyRow, Long> idempotencyDao;
+  private final Dao<IdempotencyRow, Void> idempotencyDao;
 
   /**
    * Creates repository using the provided JDBC URL.
@@ -96,7 +96,7 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
   @Override
   public synchronized Optional<String> findByIdempotency(IdempotencyKey key) {
     try {
-      QueryBuilder<IdempotencyRow, Long> query = idempotencyDao.queryBuilder();
+      QueryBuilder<IdempotencyRow, Void> query = idempotencyDao.queryBuilder();
       query.where()
           .eq("command_type", key.commandType())
           .and()
@@ -196,9 +196,6 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
 
   @DatabaseTable(tableName = "simulation_idempotency_keys")
   private static final class IdempotencyRow {
-    @DatabaseField(generatedId = true)
-    private Long id;
-
     @DatabaseField(columnName = "command_type", canBeNull = false, uniqueCombo = true)
     private String commandType;
 

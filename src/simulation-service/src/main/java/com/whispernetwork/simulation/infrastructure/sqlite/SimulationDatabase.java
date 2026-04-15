@@ -3,13 +3,15 @@ package com.whispernetwork.simulation.infrastructure.sqlite;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
 import org.flywaydb.core.Flyway;
 
 /**
  * SQLite database bootstrapper that runs Flyway migrations on startup.
  */
 public final class SimulationDatabase {
-  private static final String DEFAULT_DB_URL = "jdbc:sqlite::memory:";
+  private static final Logger LOGGER = Logger.getLogger(SimulationDatabase.class.getName());
+  private static final String DEFAULT_DB_URL = "jdbc:sqlite:file:simulation_mem?mode=memory&cache=shared";
 
   private final String jdbcUrl;
 
@@ -17,7 +19,13 @@ public final class SimulationDatabase {
    * Creates a database bootstrapper configured from environment.
    */
   public SimulationDatabase() {
-    this.jdbcUrl = normalizeJdbcUrl(readEnv("SIMULATION_DB_URL", DEFAULT_DB_URL));
+    String configuredUrl = System.getenv("SIMULATION_DB_URL");
+    if (configuredUrl == null || configuredUrl.isBlank()) {
+      this.jdbcUrl = DEFAULT_DB_URL;
+      LOGGER.warning("SIMULATION_DB_URL is not set. Falling back to in-memory SQLite: " + jdbcUrl);
+      return;
+    }
+    this.jdbcUrl = normalizeJdbcUrl(configuredUrl);
   }
 
   /**
@@ -69,11 +77,6 @@ public final class SimulationDatabase {
     } catch (Exception ex) {
       throw new IllegalStateException("Failed to create SQLite data directory: " + parent, ex);
     }
-  }
-
-  private static String readEnv(String key, String fallback) {
-    String value = System.getenv(key);
-    return value == null || value.isBlank() ? fallback : value;
   }
 
   private static String normalizeJdbcUrl(String configured) {
