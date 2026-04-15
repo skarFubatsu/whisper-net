@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-surface: #f8f9ff;
+  --color-surface-dim: #ccdbf2;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eef4ff;
+  --color-surface-container: #e5efff;
+  --color-surface-container-high: #dbe9ff;
+  --color-surface-container-highest: #d4e4fa;
+  --color-on-surface: #0d1c2d;
+  --color-on-surface-variant: #5c3f40;
+  --color-inverse-surface: #233143;
+  --color-inverse-on-surface: #e9f1ff;
+  --color-outline: #906f70;
+  --color-outline-variant: #e5bdbe;
+  --color-surface-tint: #be0037;
+  --color-primary: #b80035;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #e11d48;
+  --color-on-primary-container: #fffaf9;
+  --color-inverse-primary: #ffb3b6;
+  --color-secondary: #855300;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fea619;
+  --color-on-secondary-container: #684000;
+  --color-tertiary: #00675b;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #008274;
+  --color-on-tertiary-container: #ebfff9;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-primary-fixed: #ffdada;
+  --color-primary-fixed-dim: #ffb3b6;
+  --color-on-primary-fixed: #40000c;
+  --color-on-primary-fixed-variant: #920028;
+  --color-secondary-fixed: #ffddb8;
+  --color-secondary-fixed-dim: #ffb95f;
+  --color-on-secondary-fixed: #2a1700;
+  --color-on-secondary-fixed-variant: #653e00;
+  --color-tertiary-fixed: #62fae3;
+  --color-tertiary-fixed-dim: #3cddc7;
+  --color-on-tertiary-fixed: #00201c;
+  --color-on-tertiary-fixed-variant: #005047;
+  --color-background: #f8f9ff;
+  --color-on-background: #0d1c2d;
+  --color-surface-variant: #d4e4fa;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "Space Grotesk", monospace;
+
+  --text-display: 48px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+  --text-h1: 32px;
+  --text-h1--line-height: 1.2;
+  --text-h1--font-weight: 600;
+  --text-h2: 24px;
+  --text-h2--line-height: 1.3;
+  --text-h2--font-weight: 600;
+  --text-h3: 18px;
+  --text-h3--line-height: 1.4;
+  --text-h3--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.5;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 1.5;
+  --text-body-md--font-weight: 400;
+  --text-label-caps: 12px;
+  --text-label-caps--line-height: 1;
+  --text-label-caps--letter-spacing: 0.05em;
+  --text-label-caps--font-weight: 700;
+  --text-mono-data: 13px;
+  --text-mono-data--line-height: 1;
+  --text-mono-data--letter-spacing: -0.01em;
+  --text-mono-data--font-weight: 500;
+
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  --container-card: 24rem;
+  --container-dialog: 36rem;
+  --container-drawer-expanded: 26rem;
+  --container-drawer-collapsed: 3.5rem;
+  --container-trait-value: 3.5rem;
+
+  --spacing-unit: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-gutter: 16px;
+  --spacing-margin: 24px;
+}
