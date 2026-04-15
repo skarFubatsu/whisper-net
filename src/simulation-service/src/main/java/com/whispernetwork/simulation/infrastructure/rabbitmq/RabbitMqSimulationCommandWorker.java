@@ -19,6 +19,7 @@ import com.whispernetwork.simulation.infrastructure.sqlite.OrmLiteSimulationHist
 import com.whispernetwork.simulation.infrastructure.sqlite.OrmLiteSimulationRunRepository;
 import com.whispernetwork.simulation.infrastructure.sqlite.PersistingSimulationEventPublisher;
 import com.whispernetwork.simulation.infrastructure.sqlite.SimulationDatabase;
+import java.util.Map;
 
 /**
  * RabbitMQ worker that translates command messages into orchestrator invocations.
@@ -78,9 +79,19 @@ public final class RabbitMqSimulationCommandWorker implements AutoCloseable {
   private static void declareTopology(Channel channel) throws Exception {
     channel.exchangeDeclare(RabbitTopology.COMMANDS_EXCHANGE, BuiltinExchangeType.DIRECT, true);
     channel.exchangeDeclare(RabbitTopology.EVENTS_EXCHANGE, BuiltinExchangeType.DIRECT, true);
+    channel.exchangeDeclare(RabbitTopology.COMMANDS_DEAD_LETTER_EXCHANGE, BuiltinExchangeType.DIRECT, true);
 
-    channel.queueDeclare(RabbitTopology.SIMULATION_QUEUE_REQUESTED, true, false, false, null);
-    channel.queueDeclare(RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED, true, false, false, null);
+    Map<String, Object> requestedArgs = Map.of(
+      "x-dead-letter-exchange", RabbitTopology.COMMANDS_DEAD_LETTER_EXCHANGE,
+      "x-dead-letter-routing-key", RabbitTopology.COMMAND_ROUTING_SIMULATION_REQUESTED_DEAD_LETTER);
+    Map<String, Object> cancelArgs = Map.of(
+      "x-dead-letter-exchange", RabbitTopology.COMMANDS_DEAD_LETTER_EXCHANGE,
+      "x-dead-letter-routing-key", RabbitTopology.COMMAND_ROUTING_SIMULATION_CANCEL_REQUESTED_DEAD_LETTER);
+
+    channel.queueDeclare(RabbitTopology.SIMULATION_QUEUE_REQUESTED, true, false, false, requestedArgs);
+    channel.queueDeclare(RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED, true, false, false, cancelArgs);
+    channel.queueDeclare(RabbitTopology.SIMULATION_QUEUE_REQUESTED_DEAD_LETTER, true, false, false, null);
+    channel.queueDeclare(RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED_DEAD_LETTER, true, false, false, null);
 
     channel.queueBind(
       RabbitTopology.SIMULATION_QUEUE_REQUESTED,
@@ -90,28 +101,52 @@ public final class RabbitMqSimulationCommandWorker implements AutoCloseable {
       RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED,
       RabbitTopology.COMMANDS_EXCHANGE,
       RabbitTopology.COMMAND_ROUTING_SIMULATION_CANCEL_REQUESTED);
+    channel.queueBind(
+      RabbitTopology.SIMULATION_QUEUE_REQUESTED_DEAD_LETTER,
+      RabbitTopology.COMMANDS_DEAD_LETTER_EXCHANGE,
+      RabbitTopology.COMMAND_ROUTING_SIMULATION_REQUESTED_DEAD_LETTER);
+    channel.queueBind(
+      RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED_DEAD_LETTER,
+      RabbitTopology.COMMANDS_DEAD_LETTER_EXCHANGE,
+      RabbitTopology.COMMAND_ROUTING_SIMULATION_CANCEL_REQUESTED_DEAD_LETTER);
   }
 
   private void configureConsumers() throws Exception {
     DeliverCallback requestedCallback = (consumerTag, message) -> {
+      long deliveryTag = message.getEnvelope().getDeliveryTag();
       try {
         handleStart(message.getBody());
+        commandChannel.basicAck(deliveryTag, false);
+      } catch (IllegalArgumentException parseOrValidationException) {
+        commandChannel.basicReject(deliveryTag, false);
+        System.err.println(
+            "Rejected simulation.requested command to dead-letter queue: "
+                + parseOrValidationException.getMessage());
       } catch (RuntimeException parseOrDomainException) {
+        commandChannel.basicNack(deliveryTag, false, true);
         System.err.println("Failed to process simulation.requested command: " + parseOrDomainException.getMessage());
       }
     };
 
     DeliverCallback cancelCallback = (consumerTag, message) -> {
+      long deliveryTag = message.getEnvelope().getDeliveryTag();
       try {
         handleCancel(message.getBody());
+        commandChannel.basicAck(deliveryTag, false);
+      } catch (IllegalArgumentException parseOrValidationException) {
+        commandChannel.basicReject(deliveryTag, false);
+        System.err.println(
+            "Rejected simulation.cancel.requested command to dead-letter queue: "
+                + parseOrValidationException.getMessage());
       } catch (RuntimeException parseOrDomainException) {
+        commandChannel.basicNack(deliveryTag, false, true);
         System.err.println("Failed to process simulation.cancel.requested command: " + parseOrDomainException.getMessage());
       }
     };
 
-    commandChannel.basicConsume(RabbitTopology.SIMULATION_QUEUE_REQUESTED, true, requestedCallback, consumerTag -> {
+    commandChannel.basicConsume(RabbitTopology.SIMULATION_QUEUE_REQUESTED, false, requestedCallback, consumerTag -> {
     });
-    commandChannel.basicConsume(RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED, true, cancelCallback, consumerTag -> {
+    commandChannel.basicConsume(RabbitTopology.SIMULATION_QUEUE_CANCEL_REQUESTED, false, cancelCallback, consumerTag -> {
     });
   }
 

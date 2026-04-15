@@ -16,6 +16,8 @@ import com.whispernetwork.simulation.application.port.out.SimulationEventPort;
  * Publishes selected simulation lifecycle events to RabbitMQ.
  */
 public final class RabbitMqSimulationEventPublisher implements SimulationEventPort {
+  private static final long PUBLISH_CONFIRM_TIMEOUT_MILLIS = 5000L;
+
   private final Channel channel;
 
   /**
@@ -23,6 +25,11 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
    */
   public RabbitMqSimulationEventPublisher(Channel channel) {
     this.channel = channel;
+    try {
+      this.channel.confirmSelect();
+    } catch (Exception ex) {
+      throw new IllegalStateException("Failed to enable RabbitMQ publisher confirms", ex);
+    }
   }
 
   @Override
@@ -55,11 +62,7 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
         .build();
 
     synchronized (channel) {
-      channel.basicPublish(
-          RabbitTopology.EVENTS_EXCHANGE,
-          RabbitTopology.EVENT_ROUTING_SIMULATION_STARTED,
-          null,
-          outbound.toByteArray());
+      publishWithConfirm(RabbitTopology.EVENT_ROUTING_SIMULATION_STARTED, outbound.toByteArray());
     }
   }
 
@@ -73,11 +76,7 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
         .build();
 
     synchronized (channel) {
-      channel.basicPublish(
-          RabbitTopology.EVENTS_EXCHANGE,
-          RabbitTopology.EVENT_ROUTING_SIMULATION_CANCELLED,
-          null,
-          outbound.toByteArray());
+      publishWithConfirm(RabbitTopology.EVENT_ROUTING_SIMULATION_CANCELLED, outbound.toByteArray());
     }
   }
 
@@ -91,11 +90,7 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
         .build();
 
     synchronized (channel) {
-      channel.basicPublish(
-          RabbitTopology.EVENTS_EXCHANGE,
-          RabbitTopology.EVENT_ROUTING_SIMULATION_TICK_COMPLETED,
-          null,
-          outbound.toByteArray());
+      publishWithConfirm(RabbitTopology.EVENT_ROUTING_SIMULATION_TICK_COMPLETED, outbound.toByteArray());
     }
 
     for (AgentOpinionUpdate update : tickCompleted.updates()) {
@@ -123,11 +118,7 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
     }
 
     synchronized (channel) {
-      channel.basicPublish(
-          RabbitTopology.EVENTS_EXCHANGE,
-          RabbitTopology.EVENT_ROUTING_OPINION_UPDATED,
-          null,
-          outbound.build().toByteArray());
+      publishWithConfirm(RabbitTopology.EVENT_ROUTING_OPINION_UPDATED, outbound.build().toByteArray());
     }
   }
 
@@ -140,11 +131,7 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
         .build();
 
     synchronized (channel) {
-      channel.basicPublish(
-          RabbitTopology.EVENTS_EXCHANGE,
-          RabbitTopology.EVENT_ROUTING_SIMULATION_COMPLETED,
-          null,
-          outbound.toByteArray());
+      publishWithConfirm(RabbitTopology.EVENT_ROUTING_SIMULATION_COMPLETED, outbound.toByteArray());
     }
   }
 
@@ -157,11 +144,20 @@ public final class RabbitMqSimulationEventPublisher implements SimulationEventPo
         .build();
 
     synchronized (channel) {
-      channel.basicPublish(
-          RabbitTopology.EVENTS_EXCHANGE,
-          RabbitTopology.EVENT_ROUTING_SIMULATION_FAILED,
-          null,
-          outbound.toByteArray());
+      publishWithConfirm(RabbitTopology.EVENT_ROUTING_SIMULATION_FAILED, outbound.toByteArray());
+    }
+  }
+
+  private void publishWithConfirm(String routingKey, byte[] payload) throws Exception {
+    channel.basicPublish(
+        RabbitTopology.EVENTS_EXCHANGE,
+        routingKey,
+        true,
+        null,
+        payload);
+    boolean acknowledged = channel.waitForConfirms(PUBLISH_CONFIRM_TIMEOUT_MILLIS);
+    if (!acknowledged) {
+      throw new IllegalStateException("Broker did not confirm event publish for routing key: " + routingKey);
     }
   }
 }

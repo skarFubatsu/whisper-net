@@ -6,6 +6,7 @@ package com.whispernetwork.shared.messaging;
 public final class RabbitTopology {
   public static final String COMMANDS_EXCHANGE = "simulation.commands";
   public static final String EVENTS_EXCHANGE = "simulation.events";
+  public static final String COMMANDS_DEAD_LETTER_EXCHANGE = "simulation.commands.dlx";
 
   public static final String COMMAND_ROUTING_SIMULATION_REQUESTED = "simulation.requested";
   public static final String COMMAND_ROUTING_SIMULATION_CANCEL_REQUESTED = "simulation.cancel.requested";
@@ -19,6 +20,11 @@ public final class RabbitTopology {
 
   public static final String SIMULATION_QUEUE_REQUESTED = "simulation.command.requested";
   public static final String SIMULATION_QUEUE_CANCEL_REQUESTED = "simulation.command.cancel.requested";
+  public static final String SIMULATION_QUEUE_REQUESTED_DEAD_LETTER = "simulation.command.requested.dead-letter";
+  public static final String SIMULATION_QUEUE_CANCEL_REQUESTED_DEAD_LETTER = "simulation.command.cancel.requested.dead-letter";
+
+  public static final String COMMAND_ROUTING_SIMULATION_REQUESTED_DEAD_LETTER = "simulation.requested.dead-letter";
+  public static final String COMMAND_ROUTING_SIMULATION_CANCEL_REQUESTED_DEAD_LETTER = "simulation.cancel.requested.dead-letter";
 
   private RabbitTopology() {
   }
