@@ -21,3 +21,7 @@ build/
 # Environment
 *.env
 *.env.local
+
+__pycache__/
+*.pyc
+*.egg-info/
