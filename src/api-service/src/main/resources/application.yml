@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: api-service
+  datasource:
+    url: ${SQLITE_URL:jdbc:sqlite:./data/whisper-net.db}
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+      minimum-idle: 1
+      connection-timeout: 30000
+      connection-init-sql: "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;"
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+        jdbc.time_zone: UTC
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+security:
+  placeholder:
+    enabled: false
+    user-id: ${PLACEHOLDER_USER_ID:guest}
+    display-name: ${PLACEHOLDER_USER_DISPLAY_NAME:Guest User}
+    email: ${PLACEHOLDER_USER_EMAIL:guest@localhost}
+    role: ${PLACEHOLDER_USER_ROLE:GUEST}
+
+server:
+  port: ${SERVER_PORT:8080}
