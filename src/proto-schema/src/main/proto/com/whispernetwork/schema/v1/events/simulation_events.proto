@@ -77,4 +77,8 @@ message OpinionUpdatedEvent {
   string event_id = 13;
   string owner_id = 14;
   string request_id = 15;
+  // Unique opinion identifier assigned by the publisher and persisted in DB.
+  string opinion_id = 16;
+  // Sequence number of this opinion within the tick (0-based).
+  int32 opinion_sequence = 17;
 }
