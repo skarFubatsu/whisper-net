@@ -1,0 +1,60 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: whisper-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+  simulation-service:
+    build:
+      context: .
+      dockerfile: docker/simulation-service.Dockerfile
+    container_name: whisper-simulation-service
+    user: "0:0"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SIMULATION_DB_URL: jdbc:sqlite:/app/data/whisper-net.db
+    restart: unless-stopped
+    volumes:
+      - whisper-net-data:/app/data
+
+  api-service:
+    build:
+      context: .
+      dockerfile: docker/api-service.Dockerfile
+    container_name: whisper-api-service
+    user: "0:0"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      SQLITE_URL: jdbc:sqlite:/app/data/whisper-net.db
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - whisper-net-data:/app/data
+
+volumes:
+  whisper-net-data:

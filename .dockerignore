@@ -1,0 +1,20 @@
+# VCS and IDE
+.git
+.gitignore
+.idea
+.vscode
+
+# Python local env
+.venv
+
+# Build outputs
+**/target
+
+# OS/editor noise
+**/*.swp
+**/*.swo
+
+# Docs and helper scripts not needed for container build
+docs
+.git_time_tracker
+fgit.sh
