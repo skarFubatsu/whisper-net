@@ -60,7 +60,12 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
     public synchronized Optional<SimulationRun> findActiveByNetwork(String networkId) {
         try {
             QueryBuilder<SimulationRunRow, String> query = runDao.queryBuilder();
-            query.where().eq("network_id", networkId).and().in("status", ACTIVE_STATUSES);
+            query.where()
+                    .eq("network_id", networkId)
+                    .and()
+                    .in("status", ACTIVE_STATUSES)
+                    .and()
+                    .isNotNull("run_id");
             query.orderBy("updated_at_epoch_millis", false);
             query.limit(1L);
             List<SimulationRunRow> rows = runDao.query(query.prepare());
@@ -134,6 +139,9 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
         @DatabaseField(columnName = "request_id")
         private String requestId;
 
+        @DatabaseField(columnName = "tracking_id")
+        private String trackingId;
+
         @DatabaseField(columnName = "requested_by_actor_id", canBeNull = false)
         private String requestedByActorId;
 
@@ -158,8 +166,14 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
         @DatabaseField(columnName = "cancellation_client_request_id")
         private String cancellationClientRequestId;
 
+        @DatabaseField(columnName = "created_at")
+        private String createdAt;
+
         @DatabaseField(columnName = "created_at_epoch_millis", canBeNull = false)
         private long createdAtEpochMillis;
+
+        @DatabaseField(columnName = "updated_at")
+        private String updatedAt;
 
         @DatabaseField(columnName = "updated_at_epoch_millis", canBeNull = false)
         private long updatedAtEpochMillis;
@@ -171,6 +185,7 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
             row.networkVersionNumber = run.getNetworkVersionNumber();
             row.ownerId = run.getRequestedByActorId();
             row.requestId = run.getClientRequestId();
+            row.trackingId = run.getClientRequestId();
             row.requestedByActorId = run.getRequestedByActorId();
             row.clientRequestId = run.getClientRequestId();
             row.requestedTicks = run.getRequestedTicks();
@@ -179,7 +194,9 @@ public final class OrmLiteSimulationRunRepository implements SimulationRunReposi
             row.failureMessage = run.getFailureMessage();
             row.cancellationRequestedByActorId = run.getCancellationRequestedByActorId();
             row.cancellationClientRequestId = run.getCancellationClientRequestId();
+            row.createdAt = run.getCreatedAt().toString();
             row.createdAtEpochMillis = run.getCreatedAt().toEpochMilli();
+            row.updatedAt = run.getUpdatedAt().toString();
             row.updatedAtEpochMillis = run.getUpdatedAt().toEpochMilli();
             return row;
         }
